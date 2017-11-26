@@ -1,0 +1,18 @@
+{% from "_formhelpers.html" import render_field %}
+<html>
+<head>
+  <title>login</title>
+</head>
+<body>
+  <form method="POST" action="/login">
+    <dl>
+      {{ form.csrf_token}}
+      {{ render_field(form.email)}}
+      {{ render_field(form.password)}}
+      {{ render_field(form.remember)}}
+      <input type="submit" value="Login">
+      <p>New user? <a href="{{ url_for('register') }}"> Register here</a>. </p>
+    </dl>
+  </form>
+</body>
+</html>

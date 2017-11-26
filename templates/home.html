@@ -1,0 +1,23 @@
+{% from "_formhelpers.html" import render_field %}
+<html>
+<head>
+  <title>Home</title>
+</head>
+<body>
+  Welcome, {{name}}
+  Today is {{time.strftime('%b %d, %Y')}}
+  <br/>
+  <a href="{{url_for('logout')}}">Log out</a>
+<br/>
+  {% for log in logs %}
+
+    {{ log.date.strftime('%B %d, %Y')}}
+    {{ log.checkin }}
+    {{ log.reason }}
+    {{ log.note }}
+    <br/>
+  {% endfor %}
+
+
+</body>
+</html>
