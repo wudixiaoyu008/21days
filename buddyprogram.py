@@ -4,7 +4,7 @@ from contextlib import closing
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField
+from wtforms import StringField, PasswordField, BooleanField, DateField, DateTimeField, SelectField
 from wtforms.validators import InputRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,7 +15,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/buddyprogram.db'
+# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
+
 db = SQLAlchemy(app)
 login_manager = LoginManager() #handle user session
 login_manager.init_app(app)
@@ -37,10 +39,17 @@ login_manager.login_view = 'login'
 
 #Database
 
+# original
 participate = db.Table('participate',
     db.Column('uid',db.Integer, db.ForeignKey('user.id')),
     db.Column('pid',db.Integer, db.ForeignKey('program.id'))
 )
+# rewrite to a class
+# class Participate(db.Model):
+#     uid = db.Column(db.Integer, db.ForeignKey('user.id'))
+#     pid = db.Column(db.Integer, db.ForeignKey('program.id'))
+
+
 
 # friend = db.Table('friend',
 #     db.Column('u1id',db.Integer,db.ForeignKey('user.id')),
@@ -132,12 +141,48 @@ def register():
         new_user = User(email=form.email.data, password=hashed_password,username=form.username.data)
         db.session.add(new_user)
         db.session.commit()
+        # close the db.session
+        db.session.close()
         #flash('Great job'+form.username.data+', you are one step closer to healthier life style!')
         return redirect(url_for('login'))
     return render_template('register.html',form=form)
 
 # @app.route('/checkin')
 # def checkin():
+
+
+# create buddy
+class CreateForm(FlaskForm):
+    name = StringField('Program Name')
+    activity = StringField('What you wanna do')
+    start_date = DateField('Start Date', format='%Y-%m-%d', default=datetime.today)
+    activity_time = DateTimeField('Activity Time', format='%H:%M:%S', default=datetime.today)
+    buddy = SelectField('Buddy', choices=[('Yu Liu', 'Yu Liu'), ('Bicheng Xu', 'Bicheng Xu'), ('Yihui Zeng', 'Yihui Zeng'), ('Hillary Clinton', 'Hillary Clinton')])
+
+@app.route('/create', methods=['GET','POST'])
+def create_buddy():
+    form = CreateForm(request.form)
+    if request.method == 'POST' and form.validate():
+        new_program = Program(name=form.name.data, activity=form.activity.data, start_date=form.start_date.data, activity_time=form.activity_time.data)
+        db.session.add(new_program)
+        db.session.commit()
+        # close db.session
+        db.session.close()
+
+        # new_participate = Participate(uid = current_user.id, pid = program_current.id)
+        # db.session.add(new_participate)
+        # db.session.commit()        
+
+        # db.session.add(new_user)
+        # db.session.commit()
+        
+        flash('New buddy program created!')
+        # add session['created']
+        session['created'] = True
+
+        return redirect(url_for('home'))
+    return render_template('create.html',form=form)
+
 
 
 
@@ -151,6 +196,8 @@ def home():
 @app.route('/logout')
 @login_required
 def logout():
+    # pop session['created']
+    session.pop('created', None)
     logout_user()
     return redirect(url_for('login'))
 

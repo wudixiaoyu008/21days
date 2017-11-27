@@ -1,0 +1,19 @@
+{% from "_formhelpers.html" import render_field %}
+<html>
+<head>
+  <title>create</title>
+</head>
+<body>
+  <form method=post action="/create">
+    <dl>
+      {{ form.csrf_token }} <!--protect the site from getting request from other sites-->
+      {{ render_field(form.name) }}
+      {{ render_field(form.activity) }}
+      {{ render_field(form.start_date) }}
+      {{ render_field(form.activity_time) }}
+      {{ render_field(form.buddy) }}
+      <input type=submit value=Create>
+    </dl>
+  </form>
+</body>
+</html>
