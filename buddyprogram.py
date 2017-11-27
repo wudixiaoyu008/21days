@@ -9,7 +9,8 @@ from wtforms.validators import InputRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-
+import os
+import sqlite3
 
 #create application
 app = Flask(__name__)
@@ -27,7 +28,6 @@ login_manager.login_view = 'login'
 
 
 
-
 # @login_manager.user_loader
 # def load_user(session_token):
 #     return User.query.filter_by(session_token = session_token).first
@@ -39,16 +39,35 @@ login_manager.login_view = 'login'
 
 #Database
 
-# original
 participate = db.Table('participate',
     db.Column('uid',db.Integer, db.ForeignKey('user.id')),
     db.Column('pid',db.Integer, db.ForeignKey('program.id'))
 )
-# rewrite to a class
-# class Participate(db.Model):
-#     uid = db.Column(db.Integer, db.ForeignKey('user.id'))
-#     pid = db.Column(db.Integer, db.ForeignKey('program.id'))
 
+
+# config for updating intermediate table participate
+###########################
+app.config.update(dict(
+    DATABASE=os.path.join(app.root_path, 'buddyprogram.db'),
+    # SECRET_KEY='development key'
+    # USERNAME='liuyuci',
+    # PASSWORD='default'
+))
+app.config.from_envvar('BUDDY_SETTINGS', silent=True)
+# connect database
+def connect_db():
+    """Connects to the specific database."""
+    rv = sqlite3.connect(app.config['DATABASE'])
+    rv.row_factory = sqlite3.Row
+    return rv
+def get_db():
+    """Opens a new database connection if there is none yet for the
+    current application context.
+    """
+    if not hasattr(g, 'sqlite_db'):
+        g.sqlite_db = connect_db()
+    return g.sqlite_db
+############################
 
 
 # friend = db.Table('friend',
@@ -122,7 +141,7 @@ def login():
         if user:
             if check_password_hash(user.password, form.password.data):
                 login_user(user,remember=form.remember.data)
-                return redirect(url_for('home'))
+                return redirect(url_for('create_buddy'))
         return 'Invalid email or password'
     return render_template('login.html', form=form)
 
@@ -163,18 +182,19 @@ class CreateForm(FlaskForm):
 def create_buddy():
     form = CreateForm(request.form)
     if request.method == 'POST' and form.validate():
+        # insert to program
         new_program = Program(name=form.name.data, activity=form.activity.data, start_date=form.start_date.data, activity_time=form.activity_time.data)
         db.session.add(new_program)
         db.session.commit()
         # close db.session
         db.session.close()
 
-        # new_participate = Participate(uid = current_user.id, pid = program_current.id)
-        # db.session.add(new_participate)
-        # db.session.commit()        
-
-        # db.session.add(new_user)
-        # db.session.commit()
+        # insert to intermediate table participate
+        db1 = get_db()
+        program_current = Program.query.order_by(Program.id.desc()).first()
+        db1.execute('insert into participate (uid, pid) values (?, ?)',
+                 [current_user.id, program_current.id])
+        db1.commit()
         
         flash('New buddy program created!')
         # add session['created']
@@ -182,7 +202,6 @@ def create_buddy():
 
         return redirect(url_for('home'))
     return render_template('create.html',form=form)
-
 
 
 
