@@ -172,8 +172,8 @@ def register():
 
 # create buddy
 class CreateForm(FlaskForm):
-    name = StringField('Program Name')
-    activity = StringField('What you wanna do')
+    name = StringField('Program Name', validators=[InputRequired(),Length(min=1,max=80)])
+    activity = StringField('What you wanna do', validators=[InputRequired(),Length(min=1,max=80)])
     start_date = DateField('Start Date', format='%Y-%m-%d', default=datetime.today)
     activity_time = DateTimeField('Activity Time', format='%H:%M:%S', default=datetime.today)
     buddy = SelectField('Buddy', choices=[('Yu Liu', 'Yu Liu'), ('Bicheng Xu', 'Bicheng Xu'), ('Yihui Zeng', 'Yihui Zeng'), ('Hillary Clinton', 'Hillary Clinton')])
