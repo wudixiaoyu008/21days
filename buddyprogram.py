@@ -49,21 +49,13 @@ participate = db.Table('participate',
 ###########################
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'buddyprogram.db'),
-    # SECRET_KEY='development key'
-    # USERNAME='liuyuci',
-    # PASSWORD='default'
 ))
 app.config.from_envvar('BUDDY_SETTINGS', silent=True)
-# connect database
 def connect_db():
-    """Connects to the specific database."""
     rv = sqlite3.connect(app.config['DATABASE'])
     rv.row_factory = sqlite3.Row
     return rv
 def get_db():
-    """Opens a new database connection if there is none yet for the
-    current application context.
-    """
     if not hasattr(g, 'sqlite_db'):
         g.sqlite_db = connect_db()
     return g.sqlite_db
@@ -140,8 +132,14 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             if check_password_hash(user.password, form.password.data):
+                # check whether to create or home
                 login_user(user,remember=form.remember.data)
-                return redirect(url_for('create_buddy'))
+                db = get_db()
+                query = 'select * from participate where uid =\'' + str(user.id) + '\''
+                if db.execute(query).fetchall():
+                    return redirect(url_for('home'))
+                else:
+                    return redirect(url_for('create_buddy'))
         return 'Invalid email or password'
     return render_template('login.html', form=form)
 
@@ -198,7 +196,7 @@ def create_buddy():
         
         flash('New buddy program created!')
         # add session['created']
-        session['created'] = True
+        # session['created'] = True
 
         return redirect(url_for('home'))
     return render_template('create.html',form=form)
@@ -216,7 +214,7 @@ def home():
 @login_required
 def logout():
     # pop session['created']
-    session.pop('created', None)
+    # session.pop('created', None)
     logout_user()
     return redirect(url_for('login'))
 

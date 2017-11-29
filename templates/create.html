@@ -25,11 +25,11 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script>
     $("#invite").click(function(){
-      let person = prompt("Type your friend email", "");
-      if (person != ""){
-        alert("Invitation sent, please wait your friend to accept")
+      let person = prompt("Type your friend's email");
+      if (person.length>0){
+        alert("Invitation sent, please wait for your friend to accept")
       }
-      else{alert("You need to type an valid email address.")}
+      else{alert("You need to type a valid email address.")}
     })
   </script>
 </body>

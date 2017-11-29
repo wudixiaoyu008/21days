@@ -9,22 +9,13 @@
   <br/>
   <a href="{{url_for('logout')}}">Log out</a>
 <br/>
-<!-- original -->
-<!--   {% for log in logs %}
-
-    {{ log.date.strftime('%B %d, %Y')}}
-    {{ log.checkin }}
-    {{ log.reason }}
-    {{ log.note }}
-    <br/>
-  {% endfor %} -->
 
 
 <!-- add if statement and create button -->
-  {% if not session.created %}
-    <p>You haven't create one program yet</p>
+<!--   {% if not session.created %}
+    <p>You haven't created one program yet</p>
     <a href="{{ url_for('create_buddy') }}">Create Program</a>
-  {% else %}
+  {% else %} -->
     <!-- test -->
     <p>test</p>
     {% for log in logs %}
@@ -34,7 +25,7 @@
       {{ log.note }}
     {% endfor %}   
 
-  {% endif %}
+<!--   {% endif %} -->
 
 
 
