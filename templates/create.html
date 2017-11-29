@@ -12,8 +12,26 @@
       {{ render_field(form.start_date) }}
       {{ render_field(form.activity_time) }}
       {{ render_field(form.buddy) }}
+      <br>
       <input type=submit value=Create>
     </dl>
   </form>
+  
+  <br>
+  <p>Cannot find your friend in the buddy list? Invite your friend!</p>
+  <button id="invite">Invite</button>
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script>
+    $("#invite").click(function(){
+      let person = prompt("Type your friend email", "");
+      if (person != ""){
+        alert("Invitation sent, please wait your friend to accept")
+      }
+      else{alert("You need to type an valid email address.")}
+    })
+  </script>
 </body>
 </html>
+

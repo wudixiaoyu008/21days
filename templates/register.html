@@ -6,12 +6,14 @@
 <body>
   <form method=post action="/register">
     <dl>
+
       {{ form.csrf_token}} <!--protect the site from getting request from other sites-->
-      {{ render_field(form.email)}}
-      {{ render_field(form.password)}}
-      {{ render_field(form.confirm)}}
-      {{ render_field(form.username)}}
-      {{ render_field(form.accept_tos)}}
+      {{ render_field(form.email) }}
+      {{ render_field(form.password) }}
+      {{ render_field(form.confirm) }}
+      {{ render_field(form.username) }}
+      {{ render_field(form.accept_tos) }}
+
       <input type=submit value=Register>
       <p>Already have an account? <a href="{{ url_for('login') }}"> Log in here</a>. </p>
     </dl>
