@@ -5,9 +5,29 @@
 </head>
 <body>
   Welcome, {{name}}
-  Today is {{time.strftime('%b %d, %Y')}}
-  <br/>
+  Today is {{time.strftime('%b %d, %Y')}}<br>
 
+
+<!--
+get the lastest log, get the log.date
+if today != log.date
+    check-in button
+else is the same day
+    if checked:
+          disable the button
+    else:
+      if current_time > deadline:
+          new_log= Dailylog(...checkin=False...)
+      else: show checkin button
+          -->
+<!-- if before the deadline time  -->
+{% if not checked %}  <a href="{{url_for('checkin')}}">Check In</a>
+{% else %}checked today! See you tomorrow:){% endif %}
+
+
+
+
+  <br/>
   <a href="{{url_for('logout')}}">Log out</a>
 <br/>
 
@@ -19,7 +39,7 @@
       {{ log.checkin }}
       {{ log.reason }}
       {{ log.note }}
-    {% endfor %}   
+    {% endfor %}
 
 
 

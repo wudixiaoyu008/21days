@@ -17,7 +17,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/buddyprogram.db'
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
+# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
+
 
 db = SQLAlchemy(app)
 login_manager = LoginManager() #handle user session
@@ -164,8 +166,27 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html',form=form)
 
-# @app.route('/checkin')
-# def checkin():
+
+
+
+@app.route('/checkin')
+def checkin():
+    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
+    new_log = Dailylog(
+    date = datetime.now(),
+    checkin = True,
+    user_id = current_user.id,
+    program_id = program_current.id    )
+    db.session.add(new_log)
+    db.session.commit()
+    # close db.session
+    db.session.close()
+
+    session['checked'] = True
+    return redirect(url_for('home'))
+
+
+
 
 
 # create buddy
@@ -173,7 +194,7 @@ class CreateForm(FlaskForm):
     name = StringField('Program Name', validators=[InputRequired(),Length(min=1,max=80)])
     activity = StringField('What you wanna do', validators=[InputRequired(),Length(min=1,max=80)])
     start_date = DateField('Start Date', format='%Y-%m-%d', default=datetime.today)
-    activity_time = DateTimeField('Activity Time', format='%H:%M:%S', default=datetime.today)
+    activity_time = DateTimeField('Activity Time', format='%H:%M:%S', default=datetime.now().time())
     buddy = SelectField('Buddy', choices=[('Yu Liu', 'Yu Liu'), ('Bicheng Xu', 'Bicheng Xu'), ('Yihui Zeng', 'Yihui Zeng'), ('Hillary Clinton', 'Hillary Clinton')])
 
 @app.route('/create', methods=['GET','POST'])
@@ -193,7 +214,7 @@ def create_buddy():
         db1.execute('insert into participate (uid, pid) values (?, ?)',
                  [current_user.id, program_current.id])
         db1.commit()
-        
+
         flash('New buddy program created!')
         # add session['created']
         # session['created'] = True
@@ -202,13 +223,20 @@ def create_buddy():
     return render_template('create.html',form=form)
 
 
-
 @app.route('/home')
 @login_required
 def home():
     program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first() #select the most current program
     logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
-    return render_template('home.html',name=current_user.username,time=datetime.now(),logs=logs)
+
+    # set_time = program_current.activity_time
+    # current_time = datetime.now().time()
+    # if current_time > set_time.
+    #     pass_set_time
+
+    return render_template('home.html',name=current_user.username, time=datetime.now(),logs=logs,
+# set_time = set_time,
+checked=session.get('checked', False))
 
 @app.route('/logout')
 @login_required
