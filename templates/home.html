@@ -7,16 +7,12 @@
   Welcome, {{name}}
   Today is {{time.strftime('%b %d, %Y')}}
   <br/>
+
   <a href="{{url_for('logout')}}">Log out</a>
 <br/>
 
 
-<!-- add if statement and create button -->
-<!--   {% if not session.created %}
-    <p>You haven't created one program yet</p>
-    <a href="{{ url_for('create_buddy') }}">Create Program</a>
-  {% else %} -->
-    <!-- test -->
+
     <p>test</p>
     {% for log in logs %}
       {{ log.date.strftime('%B %d, %Y')}}
@@ -25,7 +21,6 @@
       {{ log.note }}
     {% endfor %}   
 
-<!--   {% endif %} -->
 
 
 
