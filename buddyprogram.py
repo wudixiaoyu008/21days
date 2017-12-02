@@ -11,14 +11,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 import os
 import sqlite3
+import sys
 
 #create application
 app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/buddyprogram.db'
-# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
+# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
 
 
 db = SQLAlchemy(app)
@@ -179,14 +180,10 @@ def checkin():
     program_id = program_current.id    )
     db.session.add(new_log)
     db.session.commit()
-    # close db.session
     db.session.close()
 
     session['checked'] = True
     return redirect(url_for('home'))
-
-
-
 
 
 # create buddy
@@ -195,29 +192,44 @@ class CreateForm(FlaskForm):
     activity = StringField('What you wanna do', validators=[InputRequired(),Length(min=1,max=80)])
     start_date = DateField('Start Date', format='%Y-%m-%d', default=datetime.today)
     activity_time = DateTimeField('Activity Time', format='%H:%M:%S', default=datetime.now().time())
-    buddy = SelectField('Buddy', choices=[('Yu Liu', 'Yu Liu'), ('Bicheng Xu', 'Bicheng Xu'), ('Yihui Zeng', 'Yihui Zeng'), ('Hillary Clinton', 'Hillary Clinton')])
+    buddy = SelectField('Buddy', choices=[], coerce=int)
 
 @app.route('/create', methods=['GET','POST'])
 def create_buddy():
     form = CreateForm(request.form)
-    if request.method == 'POST' and form.validate():
+
+    # initial display selection
+    if request.method == 'GET':
+        db_buddy = get_db()
+        query_buddy = 'select id, username from user where id <>\'' + str(current_user.id) + '\'order by id asc'
+        cur = db_buddy.execute(query_buddy)
+        entries = cur.fetchall()
+        form.buddy.choices=[(a[0], a[1]) for a in entries]
+
+    # validate form
+    if request.method == 'POST':
         # insert to program
         new_program = Program(name=form.name.data, activity=form.activity.data, start_date=form.start_date.data, activity_time=form.activity_time.data)
         db.session.add(new_program)
         db.session.commit()
-        # close db.session
         db.session.close()
 
         # insert to intermediate table participate
         db1 = get_db()
+        query_buddy_id = 'select id from user where id =\'' + str(form.buddy.data) + '\''
+
+        cur1 = db1.execute(query_buddy_id)
+        my_buddy = cur1.fetchone()
         program_current = Program.query.order_by(Program.id.desc()).first()
+
         db1.execute('insert into participate (uid, pid) values (?, ?)',
                  [current_user.id, program_current.id])
+        db1.execute('insert into participate (uid, pid) values (?, ?)',
+                 [my_buddy[0], program_current.id])
         db1.commit()
 
+
         flash('New buddy program created!')
-        # add session['created']
-        # session['created'] = True
 
         return redirect(url_for('home'))
     return render_template('create.html',form=form)
@@ -241,8 +253,7 @@ checked=session.get('checked', False))
 @app.route('/logout')
 @login_required
 def logout():
-    # pop session['created']
-    # session.pop('created', None)
+    session.pop('checked', None)
     logout_user()
     return redirect(url_for('login'))
 
