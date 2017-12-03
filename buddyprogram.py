@@ -4,7 +4,7 @@ from contextlib import closing
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, DateField, DateTimeField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, DateField, DateTimeField, SelectField, SubmitField
 from wtforms.validators import InputRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,8 +18,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/buddyprogram.db'
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
-# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
+# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
 
 
 db = SQLAlchemy(app)
@@ -170,20 +170,7 @@ def register():
 
 
 
-@app.route('/checkin')
-def checkin():
-    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
-    new_log = Dailylog(
-    date = datetime.now(),
-    checkin = True,
-    user_id = current_user.id,
-    program_id = program_current.id    )
-    db.session.add(new_log)
-    db.session.commit()
-    db.session.close()
 
-    session['checked'] = True
-    return redirect(url_for('home'))
 
 
 # create buddy
@@ -241,19 +228,68 @@ def home():
     program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first() #select the most current program
     logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
 
-    # set_time = program_current.activity_time
-    # current_time = datetime.now().time()
-    # if current_time > set_time.
-    #     pass_set_time
+    if logs.count() == 21:
+        in_progress = False
+    else:
+        in_progress = True
 
     return render_template('home.html',name=current_user.username, time=datetime.now(),logs=logs,
-# set_time = set_time,
-checked=session.get('checked', False))
+updated=session.get('updated', False),in_progress = in_progress)
+
+
+class UpdateForm(FlaskForm):
+    check_status = SelectField("I'm", choices=[(False, "not going."),(True,"Here!")],coerce = lambda x: x=='True', validators=[InputRequired()])
+    reason = StringField('Reason')
+    submit = SubmitField('Submit')
+
+
+@app.route('/update', methods=['GET','POST'])
+def update():
+    form = UpdateForm(request.form)
+    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
+    logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
+
+    if form.validate_on_submit():
+        new_log = Dailylog(
+        date = datetime.now(),
+        checkin = form.check_status.data,
+        reason = form.reason.data,
+        user_id = current_user.id,
+        program_id = program_current.id
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        db.session.close()
+        session['updated'] = True
+
+        if logs.count()==21:
+            return redirect(url_for('Cong'))
+        else:
+            return redirect(url_for('home'))
+
+    return render_template('update.html',form=form)
+
+
+# @app.route('/checkin')
+# def checkin():
+#     program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
+#     new_log = Dailylog(
+#     date = datetime.now(),
+#     checkin = True,
+#     user_id = current_user.id,
+#     program_id = program_current.id    )
+#     db.session.add(new_log)
+#     db.session.commit()
+#     db.session.close()
+#
+#     session['updated'] = True
+#     return redirect(url_for('home'))
+
 
 @app.route('/logout')
 @login_required
 def logout():
-    session.pop('checked', None)
+    session.pop('updated', None)
     logout_user()
     return redirect(url_for('login'))
 
