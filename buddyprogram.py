@@ -8,6 +8,9 @@ from wtforms import StringField, PasswordField, BooleanField, DateField, DateTim
 from wtforms.validators import InputRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_assets import Bundle, Environment
+
+
 
 import os
 import sqlite3
@@ -16,10 +19,13 @@ import sqlite3
 app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/buddyprogram.db'
-# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/21days/buddyprogram.db'
+#app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
+#app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
 
+cs = Bundle('devices.min.css','bootstrap.min.css', output='gen/main.css')
+assets = Environment(app)
+assets.register('main_css',cs)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager() #handle user session
@@ -39,12 +45,7 @@ login_manager.login_view = 'login'
 #
 # login_manager.session_protection = "strong"
 
-#Database
 
-participate = db.Table('participate',
-    db.Column('uid',db.Integer, db.ForeignKey('user.id')),
-    db.Column('pid',db.Integer, db.ForeignKey('program.id'))
-)
 
 
 # config for updating intermediate table participate
@@ -68,6 +69,13 @@ def get_db():
 #     db.Column('u1id',db.Integer,db.ForeignKey('user.id')),
 #     db.Column('u2id',db.Integer,db.ForeignKey('user.id'))
 # )
+
+#Database
+
+participate = db.Table('participate',
+    db.Column('uid',db.Integer, db.ForeignKey('user.id')),
+    db.Column('pid',db.Integer, db.ForeignKey('program.id'))
+)
 
 class User(UserMixin,db.Model):
     id = db.Column (db.Integer, primary_key=True)
@@ -95,7 +103,9 @@ class Program(db.Model):
     start_date = db.Column(db.DateTime,nullable=False)
     activity_time = db.Column(db.DateTime,nullable=False)
     log = db.relationship('Dailylog',backref='programs',lazy='dynamic')#one to many
-    #
+    user = db.relationship('User',secondary=participate,backref=db.backref('participants',lazy='dynamic')) #many to many
+
+
     # def __init__(self,id,name,activity,start_date,activity_time):
     #     self.id=id
     #     self.name=name
@@ -123,8 +133,8 @@ class Dailylog(db.Model):
 
 #Forms
 class LoginForm(FlaskForm):
-    email = StringField('email', validators=[Email()])
-    password = PasswordField('password', validators=[InputRequired(),Length(min=8,max=80)])
+    email = StringField('Email', validators=[Email()])
+    password = PasswordField('Password', validators=[InputRequired(),Length(min=8,max=80)])
     remember = BooleanField('Keep me logged in')
 
 @app.route('/login',methods=['GET','POST']) #form needs to write and inqury so get and post are needed
@@ -195,29 +205,44 @@ class CreateForm(FlaskForm):
     activity = StringField('What you wanna do', validators=[InputRequired(),Length(min=1,max=80)])
     start_date = DateField('Start Date', format='%Y-%m-%d', default=datetime.today)
     activity_time = DateTimeField('Activity Time', format='%H:%M:%S', default=datetime.now().time())
-    buddy = SelectField('Buddy', choices=[('Yu Liu', 'Yu Liu'), ('Bicheng Xu', 'Bicheng Xu'), ('Yihui Zeng', 'Yihui Zeng'), ('Hillary Clinton', 'Hillary Clinton')])
+    buddy = SelectField('Buddy', choices=[], coerce=int)
 
 @app.route('/create', methods=['GET','POST'])
 def create_buddy():
     form = CreateForm(request.form)
-    if request.method == 'POST' and form.validate():
+
+    # initial display selection
+    if request.method == 'GET':
+        db_buddy = get_db()
+        query_buddy = 'select id, username from user where id <>\'' + str(current_user.id) + '\'order by id asc'
+        cur = db_buddy.execute(query_buddy)
+        entries = cur.fetchall()
+        form.buddy.choices=[(a[0], a[1]) for a in entries]
+
+    # validate form
+    if request.method == 'POST':
         # insert to program
         new_program = Program(name=form.name.data, activity=form.activity.data, start_date=form.start_date.data, activity_time=form.activity_time.data)
         db.session.add(new_program)
         db.session.commit()
-        # close db.session
         db.session.close()
 
         # insert to intermediate table participate
         db1 = get_db()
+        query_buddy_id = 'select id from user where id =\'' + str(form.buddy.data) + '\''
+
+        cur1 = db1.execute(query_buddy_id)
+        my_buddy = cur1.fetchone()
         program_current = Program.query.order_by(Program.id.desc()).first()
+
         db1.execute('insert into participate (uid, pid) values (?, ?)',
                  [current_user.id, program_current.id])
+        db1.execute('insert into participate (uid, pid) values (?, ?)',
+                 [my_buddy[0], program_current.id])
         db1.commit()
 
+
         flash('New buddy program created!')
-        # add session['created']
-        # session['created'] = True
 
         return redirect(url_for('home'))
     return render_template('create.html',form=form)
@@ -227,22 +252,32 @@ def create_buddy():
 @login_required
 def home():
     program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first() #select the most current program
-    logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
-
+    print program_current
+    buddy = User.query.filter(User.participants.any(id=program_current.id))
+    for user in buddy:
+        if(user.id!=current_user.id):
+            buddy_id=user.id
+    print buddy_id
+    my_logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
+    buddy_logs = Dailylog.query.filter_by(user_id = buddy_id, program_id = program_current.id )
     # set_time = program_current.activity_time
     # current_time = datetime.now().time()
     # if current_time > set_time.
     #     pass_set_time
 
-    return render_template('home.html',name=current_user.username, time=datetime.now(),logs=logs,
-# set_time = set_time,
-checked=session.get('checked', False))
+    return render_template('home.html',
+    name=current_user.username,
+    time=datetime.now(),
+    my_logs = my_logs,
+    buddy_logs = buddy_logs,
+    checked=session.get('checked', False))
 
 @app.route('/logout')
 @login_required
 def logout():
     # pop session['created']
     # session.pop('created', None)
+    session.pop('checked', None)
     logout_user()
     return redirect(url_for('login'))
 

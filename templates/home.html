@@ -1,11 +1,92 @@
 {% from "_formhelpers.html" import render_field %}
+
 <html>
 <head>
+  <meta charset = "utf-8">
   <title>Home</title>
 </head>
+{% assets "main_css" %}
+<link rel="stylesheet" type="text/css" href="{{ASSET_URL}}" >
+{% endassets %}
 <body>
-  Welcome, {{name}}
-  Today is {{time.strftime('%b %d, %Y')}}<br>
+  <div class="marvel-device iphone8 silver">
+    <div class="top-bar"></div>
+    <div class="sleep"></div>
+    <div class="volume"></div>
+    <div class="camera"></div>
+    <div class="sensor"></div>
+    <div class="speaker"></div>
+    <div class="screen">
+
+      <div class="container" style="margin-top:10px;">
+          <div class="row">
+            <div class="col-lg-12">
+              <img src="/static/img/u1.jpg" alt="user-avatar" class="img-circle" style="height:70px;" align="left">
+              <img src="/static/img/u2.jpg" alt="user-avatar" class="img-circle" style="height:70px;" align="left">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-12">
+              <h2>{{name}}</h2>
+                <h3>  Today is {{time.strftime('%b %d, %Y')}}</h3>
+                <h2> {{21-my_logs.count()}} days to go! </h2>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-12">
+              {% if not checked %}
+              <a class="btn btn-primary btn-block" href="{{url_for('checkin')}}">Check In</a>
+              {% else %}
+              <button class="btn btn-primary btn-block disabled">Checked</button>
+              See you tomorrow :)
+              {% endif %}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-sm-6">
+                  {% for log in my_logs %}
+                    <br/>
+                    {{ log.date.strftime('%B %d, %Y')}}
+                    {% if log.checkin == True %}
+                    <img src="/static/img/yes.png" alt="Checked in" class="image">
+                    {% else %}
+                      {{ log.reason }}
+                    {% endif %}
+                    {% if log.note !=None %}
+                      {{ log.note }}
+                    {% endif %}
+                  {% endfor %}
+            </div>
+            <div class="col-sm-6">
+                  <h2>Your buddy</h2>
+                  {% for log in buddy_logs %}
+                    <br/>
+                    {{ log.date.strftime('%B %d, %Y')}}
+                    {% if log.checkin == True %}
+                    <img src="/static/img/yes.png" alt="Checked in" class="image">
+                    {% else %}
+                      {{ log.reason }}
+                    {% endif %}
+                    {% if log.note !=None %}
+                      {{ log.note }}
+                    {% endif %}
+                  {% endfor %}
+            </div>
+          </div>
+
+          <br/>
+          <div class="row">
+              <div class="col-lg-12">
+              <a href="{{url_for('logout')}}" style="color:black;">Log out</a>
+              </div>
+          </div>
+          </div> <!-- /container -->
+    </div>
+    </div>
+    <div class="home"></div>
+    <div class="bottom-bar"></div>
+</div>
+
 
 
 <!--
@@ -21,25 +102,11 @@ else is the same day
       else: show checkin button
           -->
 <!-- if before the deadline time  -->
-{% if not checked %}  <a href="{{url_for('checkin')}}">Check In</a>
-{% else %}checked today! See you tomorrow:){% endif %}
 
 
 
 
-  <br/>
-  <a href="{{url_for('logout')}}">Log out</a>
-<br/>
 
-
-
-    <p>test</p>
-    {% for log in logs %}
-      {{ log.date.strftime('%B %d, %Y')}}
-      {{ log.checkin }}
-      {{ log.reason }}
-      {{ log.note }}
-    {% endfor %}
 
 
 
