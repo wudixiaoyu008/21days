@@ -4,7 +4,7 @@ from contextlib import closing
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, UserMixin, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, DateField, DateTimeField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, DateField, DateTimeField, SelectField, SubmitField
 from wtforms.validators import InputRequired, Email, EqualTo, Length
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +14,7 @@ from flask_assets import Bundle, Environment
 
 import os
 import sqlite3
+import sys
 
 #create application
 app = Flask(__name__)
@@ -179,23 +180,6 @@ def register():
 
 
 
-@app.route('/checkin')
-def checkin():
-    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
-    new_log = Dailylog(
-    date = datetime.now(),
-    checkin = True,
-    user_id = current_user.id,
-    program_id = program_current.id    )
-    db.session.add(new_log)
-    db.session.commit()
-    # close db.session
-    db.session.close()
-
-    session['checked'] = True
-    return redirect(url_for('home'))
-
-
 
 
 
@@ -248,18 +232,22 @@ def create_buddy():
     return render_template('create.html',form=form)
 
 
+
 @app.route('/home')
 @login_required
 def home():
     program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first() #select the most current program
-    print program_current
     buddy = User.query.filter(User.participants.any(id=program_current.id))
     for user in buddy:
         if(user.id!=current_user.id):
             buddy_id=user.id
-    print buddy_id
     my_logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
     buddy_logs = Dailylog.query.filter_by(user_id = buddy_id, program_id = program_current.id )
+    if my_logs.count() == 21:
+        in_progress = False
+    else:
+        in_progress = True
+
     # set_time = program_current.activity_time
     # current_time = datetime.now().time()
     # if current_time > set_time.
@@ -270,14 +258,46 @@ def home():
     time=datetime.now(),
     my_logs = my_logs,
     buddy_logs = buddy_logs,
-    checked=session.get('checked', False))
+    updated=session.get('updated', False),in_progress = in_progress)
+
+class UpdateForm(FlaskForm):
+    check_status = SelectField("I'm", choices=[(False, "not going."),(True,"Here!")],coerce = lambda x: x=='True', validators=[InputRequired()])
+    reason = StringField('Reason')
+    submit = SubmitField('Submit')
+
+@app.route('/update', methods=['GET','POST'])
+def update():
+    form = UpdateForm(request.form)
+    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
+    logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
+
+    if form.validate_on_submit():
+        new_log = Dailylog(
+        date = datetime.now(),
+        checkin = form.check_status.data,
+        reason = form.reason.data,
+        user_id = current_user.id,
+        program_id = program_current.id
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        db.session.close()
+        session['updated'] = True
+
+        if logs.count()==21:
+            return redirect(url_for('Cong'))
+        else:
+            return redirect(url_for('home'))
+
+    return render_template('update.html',form=form)
+
 
 @app.route('/logout')
 @login_required
 def logout():
     # pop session['created']
     # session.pop('created', None)
-    session.pop('checked', None)
+    session.pop('updated', None)
     logout_user()
     return redirect(url_for('login'))
 

@@ -3,23 +3,53 @@
 <head>
   <title>create</title>
 </head>
+{% assets "main_css" %}
+<link rel="stylesheet" type="text/css" href="{{ASSET_URL}}" >
+{% endassets %}
 <body>
-  <form method=post action="/create">
-    <dl>
-      {{ form.csrf_token }} <!--protect the site from getting request from other sites-->
-      {{ render_field(form.name) }}
-      {{ render_field(form.activity) }}
-      {{ render_field(form.start_date) }}
-      {{ render_field(form.activity_time) }}
-      {{ render_field(form.buddy) }}
-      <br>
-      <input type=submit value=Create>
-    </dl>
-  </form>
-  
-  <br>
-  <p>Cannot find your friend in the buddy list? Invite your friend!</p>
-  <button id="invite">Invite</button>
+  <div class="marvel-device iphone8 silver">
+    <div class="top-bar"></div>
+    <div class="sleep"></div>
+    <div class="volume"></div>
+    <div class="camera"></div>
+    <div class="sensor"></div>
+    <div class="speaker"></div>
+    <div class="screen" style="overflow: scroll;" >
+
+      <div class="container" style="margin-top:10px;">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="well bs-component">
+              <form class="form-horizontal", method="POST" action="/create">
+                {{ form.csrf_token }}
+                <fieldset>
+                  <legend>Create 21-day Program</legend>
+                  {{ form.csrf_token }} <!--protect the site from getting request from other sites-->
+                  {{ render_field(form.name) }}
+                  {{ render_field(form.activity) }}
+                  {{ render_field(form.start_date) }}
+                  {{ render_field(form.activity_time) }}
+                  {{ render_field(form.buddy) }}
+                  <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                      <button type="submit" class="btn btn-primary btn-block">Create</button>
+                    </div>
+                  </div>
+                </fieldset>
+              </form>
+              <p>Cannot find your friend in the buddy list? Invite your friend!</p>
+              <button id="invite">Invite</button>
+            </div>
+          </div>
+        </div>
+      </div> <!-- /container -->
+    </div>
+    <div class="home"></div>
+    <div class="bottom-bar"></div>
+
+
+
+
 
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -27,11 +57,10 @@
     $("#invite").click(function(){
       let person = prompt("Type your friend's email");
       if (person.length>0){
-        alert("Invitation sent, please wait for your friend to accept")
+        alert("Invitation sent, please wait for your friend to accept");
       }
-      else{alert("You need to type a valid email address.")}
+      else{alert("You need to type a valid email address.");}
     })
   </script>
 </body>
 </html>
-
