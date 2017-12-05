@@ -20,9 +20,9 @@ import sys
 app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/21days/buddyprogram.db'
+# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/21days/buddyprogram.db'
 #app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
-#app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
 
 cs = Bundle('devices.min.css','bootstrap.min.css', output='gen/main.css')
 assets = Environment(app)
@@ -248,11 +248,6 @@ def home():
     else:
         in_progress = True
 
-    # set_time = program_current.activity_time
-    # current_time = datetime.now().time()
-    # if current_time > set_time.
-    #     pass_set_time
-
     return render_template('home.html',
     name=current_user.username,
     time=datetime.now(),
@@ -268,10 +263,8 @@ class UpdateForm(FlaskForm):
 @app.route('/update', methods=['GET','POST'])
 def update():
     form = UpdateForm(request.form)
-    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
-    logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
-
     if form.validate_on_submit():
+        program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
         new_log = Dailylog(
         date = datetime.now(),
         checkin = form.check_status.data,
@@ -282,15 +275,26 @@ def update():
         db.session.add(new_log)
         db.session.commit()
         db.session.close()
-        session['updated'] = True
 
-        if logs.count()==21:
-            return redirect(url_for('Cong'))
-        else:
-            return redirect(url_for('home'))
+        session['updated'] = True
+        return redirect(url_for('between'))
 
     return render_template('update.html',form=form)
 
+@app.route('/between')
+def between():
+    program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first()
+    logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
+
+    if logs.count()==21:
+        return redirect(url_for('cong'))
+    else:
+        return redirect(url_for('home'))
+
+
+@app.route('/cong')
+def cong():
+    return render_template('cong.html')
 
 @app.route('/logout')
 @login_required

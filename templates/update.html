@@ -1,0 +1,17 @@
+{% from "_formhelpers.html" import render_field %}
+<html>
+<head>
+  <title>Update</title>
+</head>
+<body>
+  <form method=post action="/update">
+    <dl>
+
+      {{ form.csrf_token}} <!--protect the site from getting request from other sites-->
+      {{ render_field(form.check_status) }}
+      {{ render_field(form.reason) }}
+      {{ render_field(form.submit) }}
+    </dl>
+  </form>
+</body>
+</html>
