@@ -20,9 +20,9 @@ import sys
 app = Flask(__name__)
 app.config['SECRET_KEY']= 'GRADSCHOOLNOLIFE'
 app.config.from_object(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/21days/buddyprogram.db'
+app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/zengyh/myproject/21days/buddyprogram.db'
 #app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/Yu/Desktop/buddy/buddyprogram.db'
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
+#app.config['SQLALCHEMY_DATABASE_URI']='sqlite:////Users/bichengxu/Desktop/si699_03_developing_social_computing/21days/buddyprogram.db'
 
 cs = Bundle('devices.min.css','bootstrap.min.css', output='gen/main.css')
 assets = Environment(app)
@@ -157,10 +157,10 @@ def login():
     return render_template('login.html', form=form)
 
 class ResigeationForm(FlaskForm):
-    email = StringField('email',validators=[Email()])
+    email = StringField('Email',validators=[Email()])
     password = PasswordField('Input Password',validators=[InputRequired(),Length(min=8,max=80)])
-    confirm = PasswordField('Confirm password', validators=[EqualTo('password',message='Password does not match')])
-    username = StringField('username',validators=[InputRequired(),Length(min=4,max=15)])
+    confirm = PasswordField('Confirm Password', validators=[EqualTo('password',message='Password does not match')])
+    username = StringField('Username',validators=[InputRequired(),Length(min=4,max=15)])
     accept_tos = BooleanField('I accept the Term of Service',validators=[InputRequired()])
 
 @app.route('/register',methods=['GET','POST'])
@@ -233,7 +233,7 @@ def create_buddy():
 
 
 
-@app.route('/home')
+@app.route('/')
 @login_required
 def home():
     program_current = Program.query.filter(Program.participants.any(id=current_user.id)).order_by(Program.id.desc()).first() #select the most current program
