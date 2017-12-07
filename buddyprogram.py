@@ -33,22 +33,6 @@ login_manager = LoginManager() #handle user session
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-
-
-
-
-# @login_manager.user_loader
-# def load_user(session_token):
-#     return User.query.filter_by(session_token = session_token).first
-#
-# def get_id(self):
-#     return unicode(self.session_token)
-#
-# login_manager.session_protection = "strong"
-
-
-
-
 # config for updating intermediate table participate
 ###########################
 app.config.update(dict(
@@ -63,15 +47,9 @@ def get_db():
     if not hasattr(g, 'sqlite_db'):
         g.sqlite_db = connect_db()
     return g.sqlite_db
-############################
 
 
-# friend = db.Table('friend',
-#     db.Column('u1id',db.Integer,db.ForeignKey('user.id')),
-#     db.Column('u2id',db.Integer,db.ForeignKey('user.id'))
-# )
-
-#Database
+#Database Table
 
 participate = db.Table('participate',
     db.Column('uid',db.Integer, db.ForeignKey('user.id')),
@@ -87,11 +65,6 @@ class User(UserMixin,db.Model):
     # buddy = db.relationship('User',secondary=friend,backref=db.backref('friends',lazy='dynamic',cascade='all, delete-orphan')) #many to many
     log = db.relationship('Dailylog',backref='user',lazy='dynamic')#one to many
 
-    # def __init__(self,id,email,password,username):
-    #     self.id=id
-    #     self.email=email
-    #     self.username=username
-    #     self.password=password
 
 @login_manager.user_loader #get the user object to manage
 def load_user(user_id):
@@ -107,13 +80,6 @@ class Program(db.Model):
     user = db.relationship('User',secondary=participate,backref=db.backref('participants',lazy='dynamic')) #many to many
 
 
-    # def __init__(self,id,name,activity,start_date,activity_time):
-    #     self.id=id
-    #     self.name=name
-    #     self.activity=activity
-    #     self.start_date=start_date
-    #     self.activity_time=activity_time
-
 class Dailylog(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     date = db.Column(db.DateTime)
@@ -123,14 +89,6 @@ class Dailylog(db.Model):
     user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
     program_id=db.Column(db.Integer, db.ForeignKey('program.id'))
 
-    # def __init__(self, id, date, checkin, reason, note, user_id, program_id):
-    #     self.id=id
-    #     self.date=date
-    #     self.checkin=checkin
-    #     self.reason=reason
-    #     self.note=note
-    #     self.user_id=user_id
-    #     self.program_id=program_id
 
 #Forms
 class LoginForm(FlaskForm):
@@ -171,16 +129,9 @@ def register():
         new_user = User(email=form.email.data, password=hashed_password,username=form.username.data)
         db.session.add(new_user)
         db.session.commit()
-        # close the db.session
-        db.session.close()
-        #flash('Great job'+form.username.data+', you are one step closer to healthier life style!')
+        db.session.close()# close the db.session
         return redirect(url_for('login'))
     return render_template('register.html',form=form)
-
-
-
-
-
 
 
 # create buddy
@@ -241,8 +192,8 @@ def home():
     for user in buddy:
         if(user.id!=current_user.id):
             buddy_id=user.id
-    my_logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id )
-    buddy_logs = Dailylog.query.filter_by(user_id = buddy_id, program_id = program_current.id )
+    my_logs = Dailylog.query.filter_by(user_id = current_user.id, program_id = program_current.id) #get my previous checkin data
+    buddy_logs = Dailylog.query.filter_by(user_id = buddy_id, program_id = program_current.id ) #get my buddy's previous checkin data
     if my_logs.count() == 21:
         in_progress = False
     else:
@@ -299,8 +250,6 @@ def cong():
 @app.route('/logout')
 @login_required
 def logout():
-    # pop session['created']
-    # session.pop('created', None)
     session.pop('updated', None)
     logout_user()
     return redirect(url_for('login'))

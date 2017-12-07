@@ -3,11 +3,28 @@
 <head>
   <title>Home</title>
 </head>
-<body>
+{% assets "main_css" %}
+<link rel="stylesheet" type="text/css" href="{{ASSET_URL}}" >
+{% endassets %}
 
+<body>
+  <div class="marvel-device iphone8 silver">
+    <div class="top-bar"></div>
+    <div class="sleep"></div>
+    <div class="volume"></div>
+    <div class="camera"></div>
+    <div class="sensor"></div>
+    <div class="speaker"></div>
+    <div class="screen" style="overflow: scroll; background-color:#1c1e22" >
+
+      <div class="container" style="margin-top:10px; max-width:375px;">
 <h1>Congratulations! You've made it! Share your accomplishments with your friends, and have hi five with your buddy!</h1>
 <br>
-  <a href="{{url_for('home')}}">Back to Home</a>
+  <a class="btn btn-success btn-block" href="{{url_for('home')}}">Back To Home</a>
+</div> <!-- /container -->
+</div>
+<div class="home"></div>
+<div class="bottom-bar"></div>
 
 </body>
 </html>
